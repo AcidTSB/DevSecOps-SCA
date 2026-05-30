@@ -9,8 +9,8 @@ reports/**
 !reports/.gitkeep
 !reports/**/.gitkeep
 
-AGENT_INSTRUCTION.md
+AGENT_INSTRUCTIONS.md
 FINAL_CHECKLIST.md
-PROCESS.md
+PROGRESS.md
 SECURITY-LAB-NOTES.md
 CHANGELOG.md
