@@ -1,0 +1,11 @@
+flowchart LR
+    A[Developer Commit Code] --> B[Jenkins Pipeline Local]
+    B --> C[Maven Build]
+    C --> D[OWASP Dependency-Check]
+    D --> E{CVSS >= 7?}
+    E -- Yes --> F[Fail/Unstable Build]
+    E -- No --> G[Pass Build]
+    F --> H[HTML Vulnerability Report]
+    G --> H
+    H --> I[Fix Dependency Version]
+    I --> D

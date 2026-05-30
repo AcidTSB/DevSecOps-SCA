@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-parent</artifactId>
+        <version>3.3.5</version>
+        <relativePath/>
+    </parent>
+
+    <groupId>com.drownincloud.security</groupId>
+    <artifactId>devsecops-sca-demo</artifactId>
+    <version>1.0.0</version>
+    <name>DevSecOps SCA Demo</name>
+    <description>Windows-friendly DevSecOps lab using OWASP Dependency-Check for SCA.</description>
+
+    <properties>
+        <java.version>17</java.version>
+        <!-- Default profile is intentionally vulnerable for the first demo scan. -->
+        <log4j2.version.demo>2.14.1</log4j2.version.demo>
+        <!-- Build fails when a vulnerability has CVSS >= 7.0. -->
+        <dependency.check.fail.cvss>7</dependency.check.fail.cvss>
+        <dependency-check.version>12.1.0</dependency-check.version>
+    </properties>
+
+    <dependencies>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-web</artifactId>
+        </dependency>
+
+        <!--
+            LAB DEPENDENCY:
+            This Log4j version is intentionally old so OWASP Dependency-Check can detect CVEs.
+            Do not use this version in a real production system.
+            Run with -Pfixed to switch to a remediated version for the second scan.
+        -->
+        <dependency>
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-api</artifactId>
+            <version>${log4j2.version.demo}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-core</artifactId>
+            <version>${log4j2.version.demo}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-maven-plugin</artifactId>
+            </plugin>
+
+            <plugin>
+                <groupId>org.owasp</groupId>
+                <artifactId>dependency-check-maven</artifactId>
+                <version>${dependency-check.version}</version>
+                <configuration>
+                    <format>HTML</format>
+                    <outputDirectory>${project.build.directory}</outputDirectory>
+                    <failBuildOnCVSS>${dependency.check.fail.cvss}</failBuildOnCVSS>
+                    <suppressionFile>${project.basedir}/dependency-check-suppressions.xml</suppressionFile>
+                    <nvdApiKeyEnvironmentVariable>NVD_API_KEY</nvdApiKeyEnvironmentVariable>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+
+    <profiles>
+        <profile>
+            <id>vulnerable</id>
+            <activation>
+                <activeByDefault>true</activeByDefault>
+            </activation>
+            <properties>
+                <log4j2.version.demo>2.14.1</log4j2.version.demo>
+                <dependency.check.fail.cvss>7</dependency.check.fail.cvss>
+            </properties>
+        </profile>
+
+        <profile>
+            <id>fixed</id>
+            <properties>
+                <!-- Safe remediation demo version — Log4j 2.24.3 is patched against Log4Shell (CVE-2021-44228). -->
+                <log4j2.version.demo>2.24.3</log4j2.version.demo>
+                <dependency.check.fail.cvss>7</dependency.check.fail.cvss>
+            </properties>
+        </profile>
+    </profiles>
+</project>

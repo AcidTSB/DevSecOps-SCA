@@ -1,0 +1,62 @@
+pipeline {
+    agent any
+
+    options {
+        timestamps()
+        buildDiscarder(logRotator(numToKeepStr: '10'))
+    }
+
+    environment {
+        NVD_KEY_EXISTS = "${env.NVD_API_KEY ? 'Yes' : 'No'}"
+    }
+
+    stages {
+        stage('Checkout') {
+            steps {
+                echo '=== Checkout Source Code ==='
+                checkout scm
+            }
+        }
+
+        stage('Show Environment') {
+            steps {
+                echo '=== Kiem tra moi truong Windows ==='
+                bat 'java -version'
+                bat 'mvn -version'
+            }
+        }
+
+        stage('Build') {
+            steps {
+                echo '=== Build ung dung Spring Boot (Bo qua test) ==='
+                bat 'mvn clean package -DskipTests'
+            }
+        }
+
+        stage('SCA Scan Fixed') {
+            steps {
+                echo '=== Scan ban FIXED (Log4j 2.24.3) ==='
+                echo 'Mong doi stage nay se pass do da va loi.'
+                bat 'mvn org.owasp:dependency-check-maven:check -Pfixed -DskipTests'
+            }
+        }
+
+        stage('Archive Fixed Report') {
+            steps {
+                echo '=== Luu tru bao cao Fixed ==='
+                bat 'if not exist "reports\\after-fix" mkdir "reports\\after-fix"'
+                bat 'if exist "target\\dependency-check-report.html" copy /Y "target\\dependency-check-report.html" "reports\\after-fix\\dependency-check-report.html"'
+                
+                archiveArtifacts artifacts: 'reports/after-fix/**', allowEmptyArchive: true
+                archiveArtifacts artifacts: 'target/dependency-check-report.html', allowEmptyArchive: true, fingerprint: true
+            }
+        }
+
+        stage('Summary') {
+            steps {
+                echo '=== TONG KET PIPELINE FIXED ==='
+                echo 'Pipeline chay ban fixed da hoan tat. Build pass thanh cong.'
+            }
+        }
+    }
+}

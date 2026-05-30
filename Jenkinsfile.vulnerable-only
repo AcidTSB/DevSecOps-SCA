@@ -1,0 +1,64 @@
+pipeline {
+    agent any
+
+    options {
+        timestamps()
+        buildDiscarder(logRotator(numToKeepStr: '10'))
+    }
+
+    environment {
+        NVD_KEY_EXISTS = "${env.NVD_API_KEY ? 'Yes' : 'No'}"
+    }
+
+    stages {
+        stage('Checkout') {
+            steps {
+                echo '=== Checkout Source Code ==='
+                checkout scm
+            }
+        }
+
+        stage('Show Environment') {
+            steps {
+                echo '=== Kiem tra moi truong Windows ==='
+                bat 'java -version'
+                bat 'mvn -version'
+            }
+        }
+
+        stage('Build') {
+            steps {
+                echo '=== Build ung dung Spring Boot (Bo qua test) ==='
+                bat 'mvn clean package -DskipTests'
+            }
+        }
+
+        stage('SCA Scan Vulnerable') {
+            steps {
+                echo '=== Scan ban VULNERABLE (Log4j 2.14.1) ==='
+                echo 'Mong doi stage nay se fail do CVSS >= 7 (Log4Shell).'
+                catchError(buildResult: 'UNSTABLE', stageResult: 'FAILURE') {
+                    bat 'mvn org.owasp:dependency-check-maven:check -Pvulnerable -DskipTests'
+                }
+            }
+        }
+
+        stage('Archive Vulnerable Report') {
+            steps {
+                echo '=== Luu tru bao cao Vulnerable ==='
+                bat 'if not exist "reports\\before-fix" mkdir "reports\\before-fix"'
+                bat 'if exist "target\\dependency-check-report.html" copy /Y "target\\dependency-check-report.html" "reports\\before-fix\\dependency-check-report.html"'
+                
+                archiveArtifacts artifacts: 'reports/before-fix/**', allowEmptyArchive: true
+                archiveArtifacts artifacts: 'target/dependency-check-report.html', allowEmptyArchive: true, fingerprint: true
+            }
+        }
+
+        stage('Summary') {
+            steps {
+                echo '=== TONG KET PIPELINE VULNERABLE ==='
+                echo 'Pipeline chi chay ban vulnerable. Da archive bao cao.'
+            }
+        }
+    }
+}

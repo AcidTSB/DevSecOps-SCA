@@ -1,0 +1,16 @@
+target/
+.idea/
+.vscode/
+*.iml
+dependency-check-data/
+
+# Generated scan reports; keep the directory placeholders only.
+reports/**
+!reports/.gitkeep
+!reports/**/.gitkeep
+
+AGENT_INSTRUCTION.md
+FINAL_CHECKLIST.md
+PROCESS.md
+SECURITY-LAB-NOTES.md
+CHANGELOG.md
